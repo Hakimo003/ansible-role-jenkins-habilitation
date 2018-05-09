@@ -1,0 +1,106 @@
+---
+jenkins_config_folder: /home/admin/.jenkins
+jenkins_config_file: /home/admin/.jenkins/config.xml
+
+jenkins_user_admin_folder: "{{jenkins_config_folder}}/users/admin"
+
+jenkins_user_admin_file: "{{jenkins_config_folder}}/users/admin/config.xml"
+jenkins_dir_jobs: /home/admin/.jenkins/jobs/
+jenkins_restart: true
+roleMaps:
+  - roleMap:
+    type: globalRoles
+    roles:
+      - name: admin
+        permissions:
+          "{{ all_permissions }}"
+        assignedSIDs:
+          "{{ admin_users }}"
+      - name: anonymous
+        permissions:
+          - permission: hudson.model.Hudson.Read
+        assignedSIDs:
+          - sid: "test"
+      - name: authenticated
+        permissions:
+          - permission: hudson.model.Hudson.Read
+        assignedSIDs:
+          - sid: "222222"
+  - roleMap:
+    type: projectRoles
+    roles:
+      - name: project.admin
+        projectName: project
+        permissions:
+          "{{ standard_permissions }}"
+        assignedSIDs:
+          "{{ team_project }}"
+
+
+all_permissions:
+  - permission : hudson.model.View.Delete
+  - permission : hudson.model.Computer.Connect
+  - permission : hudson.model.Run.Delete
+  - permission : com.cloudbees.plugins.credentials.CredentialsProvider.ManageDomains
+  - permission : hudson.model.Computer.Create
+  - permission : hudson.model.View.Configure
+  - permission : hudson.model.Computer.Build
+  - permission : hudson.model.Item.Configure
+  - permission : hudson.model.Hudson.Administer
+  - permission : hudson.model.Item.Cancel
+  - permission : hudson.model.Item.Read
+  - permission : com.cloudbees.plugins.credentials.CredentialsProvider.View
+  - permission : hudson.model.Computer.Delete
+  - permission : hudson.model.Item.Build
+  - permission : hudson.scm.SCM.Tag
+  - permission : hudson.model.Item.Move
+  - permission : hudson.model.Item.Discover
+  - permission : hudson.model.Hudson.Read
+  - permission : com.cloudbees.plugins.credentials.CredentialsProvider.Update
+  - permission : hudson.model.Item.Create
+  - permission : hudson.model.Item.Workspace
+  - permission : com.cloudbees.plugins.credentials.CredentialsProvider.Delete
+  - permission : hudson.model.Computer.Provision
+  - permission : hudson.model.Run.Replay
+  - permission : hudson.model.View.Read
+  - permission : hudson.model.View.Create
+  - permission : hudson.model.Item.Delete
+  - permission : hudson.model.Computer.Configure
+  - permission : com.cloudbees.plugins.credentials.CredentialsProvider.Create
+  - permission : hudson.model.Computer.Disconnect
+  - permission : hudson.model.Run.Update
+  - permission: jenkins.metrics.api.Metrics.View
+  - permission: jenkins.metrics.api.Metrics.ThreadDump
+  - permission: jenkins.metrics.api.Metrics.HealthCheck
+
+standard_permissions:
+  - permission: com.cloudbees.plugins.credentials.CredentialsProvider.Update
+  - permission: hudson.model.Item.Create
+  - permission: hudson.model.Run.Delete
+  - permission: hudson.model.Item.Workspace
+  - permission: com.cloudbees.plugins.credentials.CredentialsProvider.Delete
+  - permission: com.cloudbees.plugins.credentials.CredentialsProvider.ManageDomains
+  - permission: hudson.model.Run.Replay
+  - permission: hudson.model.Item.Configure
+  - permission: hudson.model.Item.Cancel
+  - permission: hudson.model.Item.Delete
+  - permission: hudson.model.Item.Read
+  - permission: com.cloudbees.plugins.credentials.CredentialsProvider.View
+  - permission: com.cloudbees.plugins.credentials.CredentialsProvider.Create
+  - permission: hudson.model.Item.Build
+  - permission: hudson.scm.SCM.Tag
+  - permission: hudson.model.Item.Move
+  - permission: hudson.model.Item.Discover
+  - permission: hudson.model.Run.Update
+  - permission: hudson.model.Item.Release
+  - permission: jenkins.metrics.api.Metrics.View
+  - permission: jenkins.metrics.api.Metrics.ThreadDump
+  - permission: jenkins.metrics.api.Metrics.HealthCheck
+
+team_project:
+  - sid: "444444"
+
+admin_users:
+  - sid: "111111"
+  - sid: "222222"
+  - sid: "333333"

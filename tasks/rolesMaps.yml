@@ -1,0 +1,59 @@
+- name: Read attribute authorizationStrategy value
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: /hudson/authorizationStrategy
+    content: attribute
+    attribute: class
+  register: xmlAttributeAuthorizationStrategy
+
+#- debug: var=xmlAttributeAuthorizationStrategy
+
+- name: change value of authorizationStrategy if needed
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: /hudson/authorizationStrategy
+    attribute: class
+    value: "com.michelin.cio.hudson.plugins.rolestrategy.RoleBasedAuthorizationStrategy"
+  when: xmlAttributeAuthorizationStrategy != "com.michelin.cio.hudson.plugins.rolestrategy.RoleBasedAuthorizationStrategy"
+  register: var_authorization_strategy
+
+#- debug: var=var_authorization_strategy
+
+- name: Remove all children authorizationStrategy if needed
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: /hudson/authorizationStrategy/*
+    state: absent
+  when: var_authorization_strategy.changed
+
+- name: Get all roleMap
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: //hudson/authorizationStrategy/roleMap
+    content: attribute
+    attribute: type
+  register: rolesMaps_file
+  when: var_authorization_strategy.changed != true
+
+- name: set_fact
+  set_fact:
+    get_rolesMaps_names: "{{ rolesMaps_file.matches | map(attribute='roleMap')  | map(attribute='type') | list }}"
+  when: var_authorization_strategy.changed != true
+
+- name: set_fact
+  set_fact:
+    get_rolesMaps_names: "{}"
+  when: var_authorization_strategy.changed
+
+- name: Add roleMap
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: /hudson/authorizationStrategy
+    add_children:
+      - roleMap:
+          type: "{{ item.type }}"
+  with_items: "{{ roleMaps }}"
+  when: item.type not in get_rolesMaps_names
+
+- include_tasks: roles.yml
+  with_items: "{{ roleMaps }}"

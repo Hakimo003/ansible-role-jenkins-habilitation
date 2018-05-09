@@ -1,0 +1,41 @@
+---
+- set_fact:
+    inner_assigned_loop: "{{ item }}"
+
+
+- name: Get assignedSIDs of roles - "{{ inner_assigned_loop.name }}" -
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: //hudson/authorizationStrategy/roleMap[@type='{{ type }}']/role[@name='{{ inner_assigned_loop.name }}']/assignedSIDs/sid
+    count: yes
+  register: element_exist
+
+
+- name: Get assignedSIDs of roles - "{{ inner_assigned_loop.name }}" -
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: //hudson/authorizationStrategy/roleMap[@type='{{ type }}']/role[@name='{{ inner_assigned_loop.name }}']/assignedSIDs/sid
+    content: 'text'
+  register: assignedSIDs_roles
+  when: element_exist.count > 0
+
+
+- name: set_fact
+  set_fact:
+    get_assignedSIDs_names: "{{ assignedSIDs_roles.matches | map(attribute='sid') | list }}"
+  when: element_exist.count > 0
+
+- name: set_fact
+  set_fact:
+    get_assignedSIDs_names: "{}"
+  when: element_exist.count == 0
+
+
+- name: Add sid element "{{ item.sid }}"  to role "{{ inner_assigned_loop.name }}" if needed
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: /hudson/authorizationStrategy/roleMap[@type='{{ type }}']/role[@name='{{ inner_assigned_loop.name }}']/assignedSIDs
+    add_children:
+      - sid: "{{ item.sid }}"
+  with_items: "{{ inner_assigned_loop.assignedSIDs }}"
+  when: ( inner_assigned_loop.assignedSIDs is defined) and (item.sid not in get_assignedSIDs_names)

@@ -1,0 +1,13 @@
+---
+- name: restart jenkins
+  systemd:
+    name: '{{ item.name }}'
+    state: '{{ item.state }}'
+    daemon_reload: '{{ item.reload }}'
+  with_items:
+  - name: jenkins.service
+    state: stopped
+    reload: 'yes'
+  - name: jenkins.service
+    state: started
+    reload: 'yes'

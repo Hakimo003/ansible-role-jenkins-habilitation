@@ -1,0 +1,45 @@
+---
+- set_fact:
+    inner_permission_loop: "{{ item }}"
+
+#- debug: msg='{{ inner_permission_loop.permissions }}'
+
+- name: Get permissions of roles - {{ inner_permission_loop.name }} -
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: //hudson/authorizationStrategy/roleMap[@type='{{ type }}']/role[@name='{{ inner_permission_loop.name }}']/permissions/permission
+    count: yes
+  register: element_exist
+
+#- debug: msg='{{ element_exist }}'
+
+- name: Get permissions of roles - {{ inner_permission_loop.name }} -
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: //hudson/authorizationStrategy/roleMap[@type='{{ type }}']/role[@name='{{ inner_permission_loop.name }}']/permissions/permission
+    content: 'text'
+  register: permissions_roles
+  when: element_exist.count > 0
+
+#- debug: var=permissions_roles
+#  when: element_exist.count > 0
+
+- name: set_fact
+  set_fact:
+    get_permission_names: "{{ permissions_roles.matches | map(attribute='permission') | list }}"
+  when: element_exist.count > 0
+
+- name: set_fact
+  set_fact:
+    get_permission_names: "{}"
+  when: element_exist.count == 0
+
+
+- name: Add permission element "{{ item.permission }}"  to role "{{ inner_permission_loop.name }}" if needed
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: /hudson/authorizationStrategy/roleMap[@type='{{ type }}']/role[@name='{{ inner_permission_loop.name }}']/permissions
+    add_children:
+      - permission: "{{ item.permission }}"
+  with_items: "{{ inner_permission_loop.permissions }}"
+  when: ( inner_permission_loop.permissions is defined ) and ( item.permission not in get_permission_names )

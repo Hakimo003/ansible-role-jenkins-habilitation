@@ -1,0 +1,13 @@
+[Unit]
+Description=Jenkins Daemon
+
+[Service]
+ExecStart=/usr/bin/java -jar /home/admin/jenkins.war \
+                    $DAEMON_MODE \
+                    $HTTP_PORT \
+                    $HTTP_PREFIX \
+                    $LOG_PATH
+User=admin
+
+[Install]
+WantedBy=multi-user.target

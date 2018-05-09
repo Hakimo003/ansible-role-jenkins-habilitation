@@ -1,0 +1,78 @@
+---
+- set_fact:
+    inner_loop: "{{ item }}"
+
+- name: Test if tag role exist
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: //hudson/authorizationStrategy/roleMap[@type='{{ inner_loop.type }}']/role
+    count: yes
+  register: element_exist
+
+
+- name: Get Roles of rolemap - "{{ inner_loop.type }}" -
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: //hudson/authorizationStrategy/roleMap[@type='{{ inner_loop.type }}']/role
+    content: 'attribute'
+  register: roles_files
+  when: element_exist.count > 0
+
+- name: set_fact
+  set_fact:
+    get_roles_names: "{{ roles_files.matches | map(attribute='role.name') | list }}"
+  when: element_exist.count > 0
+
+- name: set_fact
+  set_fact:
+    get_roles_names: "{}"
+  when: element_exist.count == 0
+
+- name: Add role element "{{ item.name }}"  in roleMap "{{ inner_loop.type }}" if needed
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: /hudson/authorizationStrategy/roleMap[@type='{{ inner_loop.type }}']
+    add_children:
+      - role:
+          name: '{{ item.name }}'
+          _:
+            - permissions:
+            - assignedSIDs:
+
+  with_items: "{{ inner_loop.roles }}"
+  when: item.name not in get_roles_names
+
+- name: Add attribute if needed
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: /hudson/authorizationStrategy/roleMap[@type='{{ inner_loop.type }}']/role[@name='{{ item.name }}']
+    attribute: pattern
+    value: "{{ item.projectName }}.*"
+  when: ( item.projectName is defined )
+  with_items: "{{ inner_loop.roles }}"
+
+- name: Add attribute if needed
+  xml:
+    path: "{{ jenkins_config_file }}"
+    xpath: /hudson/authorizationStrategy/roleMap[@type='{{ inner_loop.type }}']/role[@name='{{ item.name }}']
+    attribute: pattern
+    value: ".*"
+  when: ( item.projectName is not defined )
+  with_items: "{{ inner_loop.roles }}"
+
+
+- include_tasks: create_dir_project.yml
+  with_items: "{{ inner_loop.roles }}"
+
+- include_tasks: permissions.yml type='{{ inner_loop.type }}'
+  with_items: "{{ inner_loop.roles }}"
+  notify: restart jenkins
+
+- include_tasks: assignedIDs.yml type='{{ inner_loop.type }}'
+  with_items: "{{ inner_loop.roles }}"
+  notify: restart jenkins
+
+- include_tasks: add_sid_authenticated_role.yml type='{{ inner_loop.type }}'
+  with_items: "{{ inner_loop.roles }}"
+  when: inner_loop.type == 'projectRoles'
+  notify: restart jenkins

@@ -1,0 +1,18 @@
+- set_fact:
+    inner_assigned_loop: "{{ item }}"
+  loop_control:
+    loop_var: item_loop
+
+- set_fact:
+    add_sid_authenticated:
+      - name: authenticated
+        assignedSIDs:
+          "{{ inner_assigned_loop.assignedSIDs }}"
+  when:  ( inner_assigned_loop.assignedSIDs is defined )
+
+- debug: msg="{{ add_sid_authenticated }}"
+  when:  ( inner_assigned_loop.assignedSIDs is defined )
+
+- include_tasks: assignedIDs.yml type='globalRoles'
+  with_items: "{{ add_sid_authenticated }}"
+  when:  ( inner_assigned_loop.assignedSIDs is defined )

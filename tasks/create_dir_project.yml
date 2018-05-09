@@ -1,0 +1,30 @@
+---
+- set_fact:
+    inner_dir_loop: "{{ item }}"
+
+- name: check if folder project "{{ inner_dir_loop.projectName }}" exist
+  stat:
+    path: "{{ jenkins_config_folder }}/jobs/{{ inner_dir_loop.projectName }}"
+  register: folder_stats
+  when: inner_dir_loop.projectName is defined
+
+- name: Create folder project "{{ inner_dir_loop.projectName }}" if needed
+  file:
+    path: "{{ jenkins_dir_jobs }}{{ inner_dir_loop.projectName }}"
+    state: directory
+    mode: 0755
+    owner: "{{ OWNER }}"
+    group: "{{ GROUP }}"
+  when: ( inner_dir_loop.projectName is defined) and ( folder_stats.stat.exists == false)
+
+
+
+- name : 'Jenkins - Copy xml file for directory'
+  template :
+    src : 'templates/config.xml.j2'
+    dest : "{{ jenkins_dir_jobs }}{{ inner_dir_loop.projectName }}/config.xml"
+    owner: "{{ OWNER }}"
+    group: "{{ GROUP }}"
+    mode : 0644
+  when: ( inner_dir_loop.projectName is defined) and ( folder_stats.stat.exists == false)
+  notify: "restart jenkins"
